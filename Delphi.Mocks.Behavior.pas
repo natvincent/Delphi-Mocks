@@ -39,7 +39,7 @@ type
     FAction : TExecuteFunc;
     FExceptClass : ExceptClass;
     FExceptionMessage : string;
-    FReturnValue : TValue;
+    FReturnValues : TArray<TValue>;
     FArgs : TArray<TValue>;
     FBehaviorType : TBehaviorType;
     FHitCount : integer;
@@ -54,6 +54,7 @@ type
     constructor CreateWillExecute(const AAction: TExecuteFunc);
     constructor CreateWillExecuteWhen(const Args: TArray<TValue>; const AAction: TExecuteFunc );
     constructor CreateWillReturnWhen(const Args: TArray<TValue>; const ReturnValue: TValue);
+    constructor CreateWillReturnInSequenceWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
     constructor CreateReturnDefault(const ReturnValue: TValue);
     constructor CreateWillRaise(const AExceptClass : ExceptClass; const message : string);
     constructor CreateWillRaiseWhen(const Args: TArray<TValue>; const AExceptClass : ExceptClass; const message : string);
@@ -62,7 +63,8 @@ type
 implementation
 
 uses
-  Delphi.Mocks.Helpers;
+  Delphi.Mocks.Helpers,
+  System.Math;
 
 { TBehavior }
 
@@ -83,7 +85,7 @@ end;
 constructor TBehavior.CreateReturnDefault(const ReturnValue: TValue);
 begin
   FBehaviorType := TBehaviorType.ReturnDefault;
-  FReturnValue := ReturnValue;
+  FReturnValues := TArray<TValue>.Create(ReturnValue);
 end;
 
 constructor TBehavior.CreateWillExecute(const AAction: TExecuteFunc);
@@ -122,7 +124,15 @@ constructor TBehavior.CreateWillReturnWhen(const Args: TArray<TValue>; const Ret
 begin
   FBehaviorType := TBehaviorType.WillReturn;
   CopyArgs(Args);
-  FReturnValue := ReturnValue;
+  FReturnValues := TArray<TValue>.Create(ReturnValue);
+  FHitCount := 0;
+end;
+
+constructor TBehavior.CreateWillReturnInSequenceWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
+begin
+  FBehaviorType := TBehaviorType.WillReturnInSequence;
+  CopyArgs(Args);
+  FReturnValues := ReturnValues;
   FHitCount := 0;
 end;
 
@@ -133,8 +143,9 @@ begin
   result := TValue.Empty;
   try
     case FBehaviorType of
-      WillReturn: result := FReturnValue;
-      ReturnDefault: result := FReturnValue;
+      WillReturn: result := FReturnValues[0];
+      WillReturnInSequence: result := FReturnValues[Min(FHitCount, High(FReturnValues))];
+      ReturnDefault: result := FReturnValues[0];
       WillRaise,WillRaiseAlways:
       begin
          if FExceptClass <> nil then
@@ -187,6 +198,7 @@ begin
   result := False;
   case FBehaviorType of
     WillReturn      : result := MatchArgs;
+    WillReturnInSequence : result := MatchArgs;
     ReturnDefault   : result := True;
     WillRaise       :
     begin

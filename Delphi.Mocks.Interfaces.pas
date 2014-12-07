@@ -35,7 +35,7 @@ uses
   Rtti;
 
 type
-  TBehaviorType = (WillReturn,ReturnDefault,WillRaise,WillRaiseAlways,WillExecute,WillExecuteWhen);
+  TBehaviorType = (WillReturn,WillReturnInSequence,ReturnDefault,WillRaise,WillRaiseAlways,WillExecute,WillExecuteWhen);
 
   IBehavior = interface
   ['{9F6FE14D-4522-48EE-B564-20E2BECF7992}']
