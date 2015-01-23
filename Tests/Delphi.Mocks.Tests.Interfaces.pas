@@ -108,3 +108,4 @@ initialization
   TestFramework.RegisterTest(TSafeCallTest.Suite);
 
 end.
+

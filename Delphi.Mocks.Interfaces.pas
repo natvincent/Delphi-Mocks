@@ -35,7 +35,7 @@ uses
   Rtti;
 
 type
-  TBehaviorType = (WillReturn,WillReturnInSequence,ReturnDefault,WillRaise,WillRaiseAlways,WillExecute,WillExecuteWhen);
+  TBehaviorType = (WillReturn,WillReturnSequenceAllways,ReturnDefault,WillRaise,WillRaiseAlways,WillExecute,WillExecuteWhen);
 
   IBehavior = interface
   ['{9F6FE14D-4522-48EE-B564-20E2BECF7992}']
@@ -85,7 +85,8 @@ type
 
     //behaviors
     procedure WillReturnDefault(const returnValue : TValue);
-    procedure WillReturnWhen(const Args: TArray<TValue>; const returnValue : TValue);
+    procedure WillReturnWhen(const Args: TArray<TValue>; const returnValues : TArray<TValue>);
+    procedure WillReturnSequence(const returnValues : TArray<TValue>);
     procedure WillRaiseAlways(const exceptionClass : ExceptClass; const message : string);
     procedure WillRaiseWhen(const exceptionClass : ExceptClass; const message : string; const Args: TArray<TValue>);
     procedure WillExecute(const func : TExecuteFunc);

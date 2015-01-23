@@ -53,8 +53,8 @@ type
     {$WARN DUPLICATE_CTOR_DTOR OFF}
     constructor CreateWillExecute(const AAction: TExecuteFunc);
     constructor CreateWillExecuteWhen(const Args: TArray<TValue>; const AAction: TExecuteFunc );
-    constructor CreateWillReturnWhen(const Args: TArray<TValue>; const ReturnValue: TValue);
-    constructor CreateWillReturnInSequenceWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
+    constructor CreateWillReturnWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
+    constructor CreateWillReturnSequence(const ReturnValues: TArray<TValue>);
     constructor CreateReturnDefault(const ReturnValue: TValue);
     constructor CreateWillRaise(const AExceptClass : ExceptClass; const message : string);
     constructor CreateWillRaiseWhen(const Args: TArray<TValue>; const AExceptClass : ExceptClass; const message : string);
@@ -63,8 +63,7 @@ type
 implementation
 
 uses
-  Delphi.Mocks.Helpers,
-  System.Math;
+  Delphi.Mocks.Helpers;
 
 { TBehavior }
 
@@ -85,7 +84,8 @@ end;
 constructor TBehavior.CreateReturnDefault(const ReturnValue: TValue);
 begin
   FBehaviorType := TBehaviorType.ReturnDefault;
-  FReturnValues := TArray<TValue>.Create(ReturnValue);
+  SetLength(FReturnValues, 1);
+  FReturnValues[0] := ReturnValue;
 end;
 
 constructor TBehavior.CreateWillExecute(const AAction: TExecuteFunc);
@@ -120,17 +120,16 @@ begin
   FHitCount := 0;
 end;
 
-constructor TBehavior.CreateWillReturnWhen(const Args: TArray<TValue>; const ReturnValue: TValue);
+constructor TBehavior.CreateWillReturnSequence(const ReturnValues: TArray<TValue>);
 begin
-  FBehaviorType := TBehaviorType.WillReturn;
-  CopyArgs(Args);
-  FReturnValues := TArray<TValue>.Create(ReturnValue);
+  FBehaviorType := TBehaviorType.WillReturnSequenceAllways;
+  FReturnValues := ReturnValues;
   FHitCount := 0;
 end;
 
-constructor TBehavior.CreateWillReturnInSequenceWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
+constructor TBehavior.CreateWillReturnWhen(const Args: TArray<TValue>; const ReturnValues: TArray<TValue>);
 begin
-  FBehaviorType := TBehaviorType.WillReturnInSequence;
+  FBehaviorType := TBehaviorType.WillReturn;
   CopyArgs(Args);
   FReturnValues := ReturnValues;
   FHitCount := 0;
@@ -139,13 +138,23 @@ end;
 function TBehavior.Execute(const Args: TArray<TValue>; const returnType: TRttiType): TValue;
 var
   msg : string;
+
+  function GetReturnValueForHit(const AHitCount: integer): TValue;
+  var
+    LReturnIndex: integer;
+  begin
+    LReturnIndex := AHitCount;
+    if LReturnIndex > High(FReturnValues) then
+      LReturnIndex := High(FReturnValues);
+    result := FReturnValues[LReturnIndex]
+  end;
+
 begin
   result := TValue.Empty;
   try
     case FBehaviorType of
-      WillReturn: result := FReturnValues[0];
-      WillReturnInSequence: result := FReturnValues[Min(FHitCount, High(FReturnValues))];
-      ReturnDefault: result := FReturnValues[0];
+      WillReturn,WillReturnSequenceAllways: result := GetReturnValueForHit(FHitCount);
+      ReturnDefault: result := GetReturnValueForHit(0);
       WillRaise,WillRaiseAlways:
       begin
          if FExceptClass <> nil then
@@ -198,7 +207,7 @@ begin
   result := False;
   case FBehaviorType of
     WillReturn      : result := MatchArgs;
-    WillReturnInSequence : result := MatchArgs;
+    WillReturnSequenceAllways: Result := True;
     ReturnDefault   : result := True;
     WillRaise       :
     begin

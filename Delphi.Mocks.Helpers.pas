@@ -59,7 +59,6 @@ type
     function IsUInt64: Boolean;
     function IsVariant: Boolean;
     function IsWord: Boolean;
-    function IsRecord: boolean;
     function AsDouble: Double;
     function AsFloat: Extended;
     function AsSingle: Single;
@@ -203,11 +202,6 @@ begin
   begin
     Result := Left.AsVariant = Right.AsVariant;
   end else
-  if Left.IsRecord and Right.IsRecord then
-  begin
-    Result := (Left.TypeInfo = Right.TypeInfo)
-              and CompareMem(Left.GetReferenceToRawData, Right.GetReferenceToRawData, Left.DataSize);
-  end else
   if Left.TypeInfo = Right.TypeInfo then
   begin
     Result := Left.AsPointer = Right.AsPointer;
@@ -302,11 +296,6 @@ end;
 function TValueHelper.IsPointer: Boolean;
 begin
   Result := Kind = tkPointer;
-end;
-
-function TValueHelper.IsRecord: boolean;
-begin
-  result := Kind = tkRecord;
 end;
 
 function TValueHelper.IsShortInt: Boolean;

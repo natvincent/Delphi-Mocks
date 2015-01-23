@@ -22,10 +22,6 @@ type
     procedure Test_WillReturnBehavior_Default;
     procedure Test_WillExecute;
 
-    procedure Test_WillReturnInSequence_Match;
-    procedure Test_WillReturnInSequence_NoMatch;
-    procedure Test_WillReturnInSequence_ReturnValueOverMultipleCalls;
-
     // WillRaise-Execute tests
     procedure CreateWillRaise_Execute_Raises_Exception_Of_Our_Choice;
     procedure CreateWillRaise_Execute_Raises_Exception_Message_Of_Our_Choice;
@@ -42,7 +38,6 @@ type
     procedure CreateWillExecute_Behavior_Type_Set_To_WillExecute;
     procedure CreateWillExecuteWhen_Behavior_Type_Set_To_WillExecuteWhen;
     procedure CreateWillReturnWhen_Behavior_Type_Set_To_WillReturn;
-    procedure CreateWillReturnInSequenceWhen_Behavior_Type_Set_To_WillReturnInSequenceWhen;
     procedure CreateReturnDefault_Behavior_Type_Set_To_ReturnDefault;
     procedure CreateWillRaise_Behavior_Type_Set_To_WillAlwaysRaise;
     procedure CreateWillRaiseWhen_Behavior_Type_Set_To_WillRaise;
@@ -104,13 +99,14 @@ procedure TTestBehaviors.Test_WillReturnBehavior_Match;
 var
   behavior : IBehavior;
   args : TArray<TValue>;
-  returnValue : TValue;
+  returnValues : TArray<TValue>;
 begin
+  SetLength(returnValues, 1);
   SetLength(args,3);
   args[0] := 1;
   args[1] := 2;
   args[2] :=  'hello';
-  behavior := TBehavior.CreateWillReturnWhen(args,returnValue);
+  behavior := TBehavior.CreateWillReturnWhen(args,returnValues);
   args[0] := 1;
   args[1] := 2;
   args[2] :=  'hello';
@@ -121,86 +117,18 @@ procedure TTestBehaviors.Test_WillReturnBehavior_NoMatch;
 var
   behavior : IBehavior;
   args : TArray<TValue>;
-  returnValue : TValue;
+  returnValues : TArray<TValue>;
 begin
+  SetLength(returnValues, 1);
   SetLength(args,3);
   args[0] := 1;
   args[1] := 2;
   args[2] := 'hello';
-  behavior := TBehavior.CreateWillReturnWhen(args,returnValue);
+  behavior := TBehavior.CreateWillReturnWhen(args,returnValues);
   args[0] := 1;
   args[1] := 2;
   args[2] :=  'hello world';
   CheckFalse(behavior.Match(args));
-end;
-
-procedure TTestBehaviors.Test_WillReturnInSequence_Match;
-var
-  behavior : IBehavior;
-  args : TArray<TValue>;
-  returnValues : TArray<TValue>;
-begin
-  returnValues := TArray<TValue>.Create(1, 2, 3);
-  SetLength(args,3);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] :=  'hello';
-  behavior := TBehavior.CreateWillReturnInSequenceWhen(args,returnValues);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] :=  'hello';
-  CheckTrue(behavior.Match(args));
-end;
-
-procedure TTestBehaviors.Test_WillReturnInSequence_NoMatch;
-var
-  behavior : IBehavior;
-  args : TArray<TValue>;
-  returnValues : TArray<TValue>;
-begin
-  returnValues := TArray<TValue>.Create('one', 'two', 'three');
-  SetLength(args,3);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] := 'hello';
-  behavior := TBehavior.CreateWillReturnInSequenceWhen(args,returnValues);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] :=  'hello world';
-  CheckFalse(behavior.Match(args));
-end;
-
-procedure TTestBehaviors.Test_WillReturnInSequence_ReturnValueOverMultipleCalls;
-var
-  behavior : IBehavior;
-  args : TArray<TValue>;
-  returnValues : TArray<TValue>;
-  returnValue: TValue;
-  rType : TRttiType;
-begin
-  returnValues := TArray<TValue>.Create(123, 456, 789);
-  SetLength(args,3);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] := 3;
-  behavior := TBehavior.CreateWillReturnInSequenceWhen(args, returnValues);
-  SetLength(args,3);
-  args[0] := 1;
-  args[1] := 2;
-  args[2] := 3;
-  rType := FContext.GetType(TypeInfo(Int64));
-
-  returnValue := behavior.Execute(args,rType);
-  CheckTrue(returnValue.AsInt64 = 123);
-
-  returnValue := behavior.Execute(args,rType);
-  CheckTrue(returnValue.AsInt64 = 456);
-
-  returnValue := behavior.Execute(args,rType);
-  CheckTrue(returnValue.AsInt64 = 789);
-
-  returnValue := behavior.Execute(args,rType);
-  CheckTrue(returnValue.AsInt64 = 789);
 end;
 
 procedure TTestBehaviors.CreateReturnDefault_Behavior_Type_Set_To_ReturnDefault;
@@ -364,22 +292,9 @@ begin
   Check(True);
 end;
 
-procedure TTestBehaviors.CreateWillReturnInSequenceWhen_Behavior_Type_Set_To_WillReturnInSequenceWhen;
-var
-  behavior: IBehavior;
-begin
-  behavior := TBehavior.CreateWillReturnInSequenceWhen(nil, nil);
-
-  Check(behavior.BehaviorType = TBehaviorType.WillReturnInSequence, 'CreateWillReturnInSequence behavior type isn''t WillReturnInSequence');
-end;
-
 procedure TTestBehaviors.CreateWillReturnWhen_Behavior_Type_Set_To_WillReturn;
-var
-  behavior: IBehavior;
 begin
-  behavior := TBehavior.CreateWillReturnWhen(nil, nil);
 
-  Check(behavior.BehaviorType = TBehaviorType.WillReturn, 'CreateWillReturnWhen behavior type isn''t WillReturn');
 end;
 
 initialization

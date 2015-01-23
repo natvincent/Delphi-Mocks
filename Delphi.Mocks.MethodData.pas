@@ -51,7 +51,8 @@ type
 
     //Behaviors
     procedure WillReturnDefault(const returnValue : TValue);
-    procedure WillReturnWhen(const Args: TArray<TValue>; const returnValue : TValue);
+    procedure WillReturnWhen(const Args: TArray<TValue>; const returnValues : TArray<TValue>);
+    procedure WillReturnSequence(const returnValues : TArray<TValue>);
     procedure WillRaiseAlways(const exceptionClass : ExceptClass; const message : string);
     procedure WillRaiseWhen(const exceptionClass : ExceptClass; const message : string;const Args: TArray<TValue>);
     procedure WillExecute(const func : TExecuteFunc);
@@ -200,6 +201,10 @@ begin
     exit;
 
   result := FindBehavior(TBehaviorType.WillReturn,Args);
+  if Result <> nil then
+    exit;
+
+  result := FindBehavior(TBehaviorType.WillReturnSequenceAllways,Args);
   if Result <> nil then
     exit;
 
@@ -524,14 +529,25 @@ begin
   FReturnDefault := returnValue;
 end;
 
-procedure TMethodData.WillReturnWhen(const Args: TArray<TValue>; const returnValue: TValue);
+procedure TMethodData.WillReturnSequence(const returnValues: TArray<TValue>);
+var
+  behavior : IBehavior;
+begin
+  behavior := FindBehavior(TBehaviorType.WillReturnSequenceAllways);
+  if behavior <> nil then
+    raise EMockSetupException.Create(Format('[%s] already defines Will Return When for method [%s]', [FTypeName, FMethodName]));
+  behavior := TBehavior.CreateWillReturnSequence(returnValues);
+  FBehaviors.Add(behavior);
+end;
+
+procedure TMethodData.WillReturnWhen(const Args: TArray<TValue>; const returnValues: TArray<TValue>);
 var
   behavior : IBehavior;
 begin
   behavior := FindBehavior(TBehaviorType.WillReturn,Args);
   if behavior <> nil then
     raise EMockSetupException.Create(Format('[%s] already defines Will Return When for method [%s]', [FTypeName, FMethodName]));
-  behavior := TBehavior.CreateWillReturnWhen(Args,returnValue);
+  behavior := TBehavior.CreateWillReturnWhen(Args,returnValues);
   FBehaviors.Add(behavior);
 end;
 

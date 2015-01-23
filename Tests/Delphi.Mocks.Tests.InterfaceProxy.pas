@@ -58,6 +58,14 @@ type
   end;
   {$M-}
 
+  {$M+}
+  IInterfaceWithFunction = interface
+    ['{9E8D8841-33AC-4C4C-BF1B-667EE5E14DF0}']
+    function Execute(ATestParam: integer): string;
+  end;
+
+  {$M-}
+
   TTestInterfaceProxy = class(TTestCase)
   published
     procedure After_Proxy_AddImplement_ProxyProxy_Implements_Original_Interface;
@@ -72,6 +80,8 @@ type
     procedure MockNoArgProcedureUsingExactlyWhen;
     procedure TestOuParam;
     procedure TestVarParam;
+    procedure TestMultipleReturnValues;
+    procedure TestMultipleReturnValuesIgnoreParams;
   end;
 
 implementation
@@ -207,6 +217,43 @@ begin
   mock.Setup.Expect.Once.When.Execute;
   mock.Instance.Execute;
   mock.Verify;
+end;
+
+procedure TTestInterfaceProxy.TestMultipleReturnValues;
+var
+  mock: TMock<IInterfaceWithFunction>;
+const
+  CReturn1 = 'return value 1';
+  CReturn2 = 'return value 2';
+  CReturn3 = 'return value 3';
+begin
+  mock := TMock<IInterfaceWithFunction>.Create;
+
+  mock.Setup.WillReturnInSequence(TArray<TValue>.Create(CReturn1, CReturn2, CReturn3)).When.Execute(1);
+
+  CheckEquals(CReturn1, mock.Instance.Execute(1));
+  CheckEquals(CReturn2, mock.Instance.Execute(1));
+  CheckEquals(CReturn3, mock.Instance.Execute(1));
+  CheckEquals(CReturn3, mock.Instance.Execute(1));
+
+end;
+
+procedure TTestInterfaceProxy.TestMultipleReturnValuesIgnoreParams;
+var
+  mock: TMock<IInterfaceWithFunction>;
+const
+  CReturn1 = 'return value 1';
+  CReturn2 = 'return value 2';
+  CReturn3 = 'return value 3';
+begin
+  mock := TMock<IInterfaceWithFunction>.Create;
+
+  mock.Setup.WillReturnInSequence('Execute', TArray<TValue>.Create(CReturn1, CReturn2, CReturn3));
+
+  CheckEquals(CReturn1, mock.Instance.Execute(1));
+  CheckEquals(CReturn2, mock.Instance.Execute(17));
+  CheckEquals(CReturn3, mock.Instance.Execute(42));
+  CheckEquals(CReturn3, mock.Instance.Execute(61));
 end;
 
 procedure TTestInterfaceProxy.TestOuParam;

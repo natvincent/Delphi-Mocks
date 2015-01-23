@@ -123,7 +123,8 @@ type
 
     {$Message 'TODO: Implement ISetup.Before and ISetup.After.'}
     function WillReturn(const value : TValue) : IWhen<T>;
-    function WillReturnInSequence(const values: TArray<TValue>) : IWhen<T>;
+    function WillReturnInSequence(const values : TArray<TValue>) : IWhen<T>; overload;
+    procedure WillReturnInSequence(const AMethodName: string; const values : TArray<TValue>); overload;
     procedure WillReturnDefault(const AMethodName : string; const value : TValue);
     function WillRaise(const exceptionClass : ExceptClass; const message : string = '') : IWhen<T>; overload;
     procedure WillRaise(const AMethodName : string; const exceptionClass : ExceptClass; const message : string = ''); overload;
@@ -327,7 +328,7 @@ end;
 procedure TProxy<T>.ClearSetupState;
 begin
   FSetupMode := TSetupMode.None;
-  FReturnValues := TArray<TValue>.Create();
+  SetLength(FReturnValues, 0);
   FExceptClass := nil;
   FNextFunc := nil;
 end;
@@ -400,9 +401,9 @@ begin
         case FNextBehavior of
           TBehaviorType.WillReturn:
           begin
-            if (Method.ReturnType = nil) and (not (Length(FReturnValues) = 0)) then
+            if (Method.ReturnType = nil) and (Length(FReturnValues) > 0) then
               raise EMockSetupException.Create('Setup.WillReturn called on procedure : ' + Method.Name );
-            methodData.WillReturnWhen(Args,FReturnValues[0]);
+            methodData.WillReturnWhen(Args,FReturnValues);
           end;
           TBehaviorType.WillRaise:
           begin
@@ -712,7 +713,8 @@ end;
 function TProxy<T>.WillReturn(const value: TValue): IWhen<T>;
 begin
   FSetupMode := TSetupMode.Behavior;
-  FReturnValues := TArray<TValue>.Create(value);
+  SetLength(FReturnValues, 1);
+  FReturnValues[0] := value;
   FNextBehavior := TBehaviorType.WillReturn;
   result := TWhen<T>.Create(Self.Proxy);
 end;
@@ -726,6 +728,16 @@ begin
   Assert(methodData <> nil);
   methodData.WillReturnDefault(value);
   ClearSetupState;
+end;
+
+procedure TProxy<T>.WillReturnInSequence(const AMethodName: string; const values: TArray<TValue>);
+var
+  methodData : IMethodData;
+begin
+  //actually record the behaviour here!
+  methodData := GetMethodData(AMethodName);
+  Assert(methodData <> nil);
+  methodData.WillReturnSequence(values);
 end;
 
 function TProxy<T>.WillReturnInSequence(const values: TArray<TValue>): IWhen<T>;
